@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOROBOTICS.DE — German Robotics Ecosystem</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --panel: #0f1419;
+  --panel2: #161c24;
+  --border: #1e2730;
+  --border2: #2a3545;
+  --accent: #f0a500;
+  --accent-dim: rgba(240,165,0,0.12);
+  --teal: #00c9a0;
+  --text: #d0dae8;
+  --muted: #4a5f78;
+  --muted2: #6a7f98;
+
+  /* Category */
+  --col-Industrial: #4f9eff;
+  --col-AI: #00c9a0;
+  --col-Logistics: #f0a500;
+  --col-Exoskeleton: #b07fff;
+  --col-Medical: #ff5e7a;
+  --col-Research-Lab: #5ecfff;
+
+  /* Stage */
+  --col-Startup: #ff9d4f;
+  --col-Scaleup: #f0a500;
+  --col-Corporate: #4f9eff;
+  --col-Spinout: #b07fff;
+  --col-Research-Lab-s: #5ecfff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── TOPBAR ─── */
+.topbar {
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 20px;
+  flex-shrink: 0;
+  z-index: 2000;
+}
+
+.logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 3px;
+  white-space: nowrap;
+}
+.logo em { color: var(--accent); font-style: normal; }
+
+.topbar-divider { width: 1px; height: 28px; background: var(--border2); }
+
+.live-badge {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10px; color: var(--muted2); letter-spacing: 1.5px;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal);
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.stat-chips { display: flex; gap: 10px; margin-left: 4px; }
+.chip {
+  font-size: 10px; padding: 3px 10px;
+  border: 1px solid var(--border2);
+  color: var(--muted2); letter-spacing: 1px;
+}
+.chip b { color: var(--accent); }
+
+.topbar-search {
+  margin-left: auto;
+  position: relative;
+}
+.topbar-search input {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 6px 32px 6px 12px;
+  width: 210px; outline: none;
+  transition: border-color .2s;
+}
+.topbar-search input:focus { border-color: var(--accent); }
+.topbar-search input::placeholder { color: var(--muted); }
+.search-ico {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted); font-size: 14px; pointer-events: none;
+}
+
+/* ─── LAYOUT ─── */
+.body-wrap { display: flex; flex: 1; overflow: hidden; }
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: 290px; flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sec-label {
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+/* Filter rows */
+.filter-row { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.fbtn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 1px;
+  padding: 4px 9px; cursor: pointer;
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--muted2); text-transform: uppercase;
+  transition: all .15s; white-space: nowrap;
+}
+.fbtn:hover { border-color: var(--accent); color: var(--text); }
+.fbtn.active {
+  font-weight: 700; color: var(--bg);
+  border-color: transparent;
+}
+
+/* category active colors */
+.fbtn[data-g="cat"][data-v="all"].active    { background: var(--text); }
+.fbtn[data-g="cat"][data-v="Industrial"].active  { background: var(--col-Industrial); }
+.fbtn[data-g="cat"][data-v="AI"].active          { background: var(--col-AI); }
+.fbtn[data-g="cat"][data-v="Logistics"].active   { background: var(--col-Logistics); }
+.fbtn[data-g="cat"][data-v="Exoskeleton"].active { background: var(--col-Exoskeleton); }
+.fbtn[data-g="cat"][data-v="Medical"].active     { background: var(--col-Medical); }
+.fbtn[data-g="cat"][data-v="Research Lab"].active{ background: var(--col-Research-Lab); }
+
+/* stage active colors */
+.fbtn[data-g="stage"][data-v="all"].active     { background: var(--text); }
+.fbtn[data-g="stage"][data-v="Startup"].active { background: var(--col-Startup); }
+.fbtn[data-g="stage"][data-v="Scaleup"].active { background: var(--col-Scaleup); }
+.fbtn[data-g="stage"][data-v="Corporate"].active { background: var(--col-Corporate); }
+.fbtn[data-g="stage"][data-v="Spinout"].active { background: var(--col-Spinout); }
+.fbtn[data-g="stage"][data-v="Research Lab"].active { background: var(--col-Research-Lab-s); }
+
+/* toggle for hiring */
+.toggle-row { display: flex; align-items: center; gap: 10px; }
+.toggle {
+  width: 34px; height: 18px; background: var(--border2);
+  border-radius: 9px; cursor: pointer; position: relative;
+  transition: background .2s; border: none; flex-shrink: 0;
+}
+.toggle::after {
+  content: ''; position: absolute;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--muted2); top: 3px; left: 3px;
+  transition: all .2s;
+}
+.toggle.on { background: var(--teal); }
+.toggle.on::after { background: var(--bg); left: 19px; }
+.toggle-label { font-size: 10px; color: var(--muted2); letter-spacing: 1px; }
+
+/* company list */
+.company-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+.company-list::-webkit-scrollbar { width: 3px; }
+.company-list::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.citem {
+  padding: 9px 14px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: all .12s;
+  border-bottom: 1px solid rgba(30,39,48,0.7);
+}
+.citem:hover, .citem.sel {
+  background: rgba(240,165,0,0.04);
+  border-left-color: var(--accent);
+}
+.citem-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+.citem-name { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.3; flex: 1; }
+.citem-hiring {
+  font-size: 8px; padding: 2px 5px; margin-left: 6px; flex-shrink: 0;
+  background: rgba(0,201,160,0.15); color: var(--teal);
+  letter-spacing: 1px; font-weight: 700; align-self: flex-start;
+}
+.citem-city { font-size: 9px; color: var(--muted); margin-bottom: 5px; }
+.citem-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.badge {
+  font-size: 8px; padding: 1px 6px; letter-spacing: 1px;
+  text-transform: uppercase; font-weight: 700;
+}
+
+.no-res {
+  padding: 36px 14px; text-align: center;
+  color: var(--muted); font-size: 10px; line-height: 2;
+}
+
+/* ─── MAP ─── */
+.map-wrap { flex: 1; position: relative; overflow: hidden; }
+#map { width: 100%; height: 100%; }
+.leaflet-tile { filter: brightness(0.42) saturate(0.5) hue-rotate(185deg) invert(1) !important; }
+
+/* ─── DETAIL PANEL ─── */
+.detail-panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--panel2);
+  border-top: 1px solid var(--border2);
+  padding: 14px 20px;
+  display: none;
+  z-index: 1000;
+  animation: slideUp .2s ease;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:none;opacity:1} }
+.detail-panel.open { display: flex; gap: 24px; flex-wrap: wrap; }
+
+.detail-close {
+  position: absolute; top: 10px; right: 14px;
+  background: none; border: none; color: var(--muted2);
+  cursor: pointer; font-size: 16px; line-height: 1;
+}
+.detail-close:hover { color: var(--text); }
+
+.detail-col { min-width: 160px; flex: 1; }
+.detail-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 800;
+  letter-spacing: 1px; color: var(--text);
+  margin-bottom: 2px;
+}
+.detail-city { font-size: 10px; color: var(--muted2); margin-bottom: 8px; }
+.detail-tagline { font-size: 11px; color: var(--muted2); line-height: 1.6; }
+
+.detail-meta { display: flex; flex-direction: column; gap: 6px; min-width: 200px; flex: 1; }
+.dm-row { display: flex; gap: 8px; }
+.dm-key { font-size: 9px; color: var(--muted); letter-spacing: 1.5px; width: 90px; flex-shrink: 0; }
+.dm-val { font-size: 10px; color: var(--text); }
+.dm-val a { color: var(--teal); text-decoration: none; }
+
+.detail-keywords { flex: 1; min-width: 200px; }
+.kw-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.kw {
+  font-size: 9px; padding: 3px 8px;
+  background: var(--panel); border: 1px solid var(--border2);
+  color: var(--muted2); letter-spacing: 1px;
+}
+
+.grant-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.grant-item {
+  font-size: 9px; padding: 4px 8px;
+  background: rgba(0,201,160,0.07);
+  border-left: 2px solid var(--teal);
+  color: var(--muted2);
+}
+
+/* ─── POPUP ─── */
+.leaflet-popup-content-wrapper {
+  background: var(--panel2) !important;
+  border: 1px solid var(--border2) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,.9) !important;
+  padding: 0 !important;
+}
+.leaflet-popup-tip { background: var(--panel2) !important; }
+.leaflet-popup-content { margin: 0 !important; font-family: 'JetBrains Mono', monospace; }
+.pu { min-width: 220px; }
+.pu-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border); }
+.pu-cat { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; margin-bottom: 3px; }
+.pu-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800; color: var(--text); }
+.pu-body { padding: 9px 14px; }
+.pu-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.pu-row span:last-child { color: var(--text); }
+.pu-hint { font-size: 9px; color: var(--muted); margin-top: 8px; letter-spacing: 1px; }
+
+/* CLUSTER */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+  background: rgba(240,165,0,.15) !important;
+}
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background: var(--accent) !important; color: var(--bg) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important; font-size: 11px !important;
+}
+
+/* MAP LEGEND */
+.map-legend {
+  position: absolute; top: 12px; right: 52px;
+  z-index: 1000; background: var(--panel2);
+  border: 1px solid var(--border2);
+  padding: 10px 12px; pointer-events: none;
+}
+.leg-title { font-size: 8px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+.leg-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.leg-label { font-size: 9px; color: var(--muted2); }
+
+@media (max-width: 720px) {
+  .sidebar { display: none; }
+  .stat-chips, .live-badge { display: none; }
+  .topbar-search input { width: 160px; }
+  .detail-panel.open { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">MOROBOTICS<em>.</em>DE</div>
+  <div class="topbar-divider"></div>
+  <div class="live-badge"><div class="live-dot"></div>ECOSYSTEM MAP</div>
+  <div class="stat-chips">
+    <div class="chip"><b id="stat-total">—</b> ENTITIES</div>
+    <div class="chip"><b id="stat-hiring">—</b> HIRING</div>
+    <div class="chip"><b id="stat-grants">—</b> FUNDED</div>
+  </div>
+  <div class="topbar-search">
+    <input id="search" type="text" placeholder="Search name, city, keyword…">
+    <span class="search-ico">⌕</span>
+  </div>
+</div>
+
+<div class="body-wrap">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sec-label">Category</div>
+      <div class="filter-row" id="cat-filters">
+        <button class="fbtn active" data-g="cat" data-v="all">All</button>
+        <button class="fbtn" data-g="cat" data-v="Industrial">Industrial</button>
+        <button class="fbtn" data-g="cat" data-v="AI">AI</button>
+        <button class="fbtn" data-g="cat" data-v="Logistics">Logistics</button>
+        <button class="fbtn" data-g="cat" data-v="Exoskeleton">Exo</button>
+        <button class="fbtn" data-g="cat" data-v="Medical">Medical</button>
+        <button class="fbtn" data-g="cat" data-v="Research Lab">Lab</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Stage</div>
+      <div class="filter-row" id="stage-filters">
+        <button class="fbtn active" data-g="stage" data-v="all">All</button>
+        <button class="fbtn" data-g="stage" data-v="Startup">Startup</button>
+        <button class="fbtn" data-g="stage" data-v="Scaleup">Scaleup</button>
+        <button class="fbtn" data-g="stage" data-v="Corporate">Corporate</button>
+        <button class="fbtn" data-g="stage" data-v="Spinout">Spinout</button>
+        <button class="fbtn" data-g="stage" data-v="Research Lab">Lab</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Signal</div>
+      <div class="toggle-row">
+        <button class="toggle" id="hiring-toggle"></button>
+        <span class="toggle-label">HIRING ONLY</span>
+      </div>
+    </div>
+
+    <div class="company-list" id="company-list"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-wrap">
+    <div id="map"></div>
+
+    <div class="map-legend">
+      <div class="leg-title">Category</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--col-Industrial)"></div><span class="leg-label">Industrial</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--col-AI)"></div><span class="leg-label">AI</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--col-Logistics)"></div><span class="leg-label">Logistics</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--col-Exoskeleton)"></div><span class="leg-label">Exoskeleton</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--col-Medical)"></div><span class="leg-label">Medical</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--col-Research-Lab)"></div><span class="leg-label">Research Lab</span></div>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div class="detail-panel" id="detail-panel">
+      <button class="detail-close" id="detail-close">✕</button>
+      <div class="detail-col">
+        <div class="detail-name" id="d-name"></div>
+        <div class="detail-city" id="d-city"></div>
+        <div class="detail-tagline" id="d-tagline"></div>
+      </div>
+      <div class="detail-meta">
+        <div class="dm-row"><span class="dm-key">FOUNDED</span><span class="dm-val" id="d-founded"></span></div>
+        <div class="dm-row"><span class="dm-key">STAGE</span><span class="dm-val" id="d-stage"></span></div>
+        <div class="dm-row"><span class="dm-key">FUNDING</span><span class="dm-val" id="d-funding"></span></div>
+        <div class="dm-row"><span class="dm-key">WEBSITE</span><span class="dm-val" id="d-web"></span></div>
+        <div class="dm-row"><span class="dm-key">HIRING</span><span class="dm-val" id="d-hiring"></span></div>
+        <div class="dm-row"><span class="dm-key">ORIGIN LAB</span><span class="dm-val" id="d-lab"></span></div>
+      </div>
+      <div class="detail-keywords">
+        <div class="sec-label">Tech Keywords</div>
+        <div class="kw-list" id="d-keywords"></div>
+        <div class="sec-label" style="margin-top:10px">EU / BMBF Grants</div>
+        <div class="grant-list" id="d-grants"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script>
+// ─── CATEGORY COLORS ──────────────────────────────────────────────────────
+const CAT_COLOR = {
+  Industrial:    '#4f9eff',
+  AI:            '#00c9a0',
+  Logistics:     '#f0a500',
+  Exoskeleton:   '#b07fff',
+  Medical:       '#ff5e7a',
+  'Research Lab':'#5ecfff'
+};
+
+// ─── MAP INIT ─────────────────────────────────────────────────────────────
+const map = L.map('map', { center:[51.1657,10.4515], zoom:6, zoomControl:false });
+L.control.zoom({ position:'topright' }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution:'© OpenStreetMap', maxZoom:19
+}).addTo(map);
+
+const cluster = L.markerClusterGroup({ maxClusterRadius:55, showCoverageOnHover:false });
+map.addLayer(cluster);
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let DATA = [];
+let activeCat = 'all';
+let activeStage = 'all';
+let hiringOnly = false;
+let searchQ = '';
+let selectedIdx = null;
+let markerMap = {};
+
+// ─── LOAD DATA ────────────────────────────────────────────────────────────
+// Inline data so the file works standalone (copy of companies.json)
+DATA = [{"id":"kuka-ag","name":"KUKA AG","city":"Augsburg","state":"Bavaria","lat":48.3705,"lng":10.8978,"category":"Industrial","stage":"Corporate","founded":1898,"website":"https://kuka.com","tagline":"World-leading industrial robot arms & automation systems for manufacturing.","tech_keywords":["robot arms","motion planning","industrial automation","SCARA"],"research_domains":["manipulation","motion control","human-robot collaboration"],"founding_lab":null,"notable_people":["Peter Mohnen (CEO)"],"partnerships":["Siemens","BMW","Airbus"],"eu_bmbf_grants":[],"open_positions":true,"funding_stage":"Acquired (Midea Group)","icon":"🦾"},{"id":"franka-robotics","name":"Franka Robotics","city":"Munich","state":"Bavaria","lat":48.1451,"lng":11.558,"category":"Industrial","stage":"Spinout","founded":2017,"website":"https://franka.de","tagline":"Collaborative robot arms with fine-grained force control for research & industry.","tech_keywords":["collaborative robots","force control","torque sensing","ROS"],"research_domains":["manipulation","haptics","learning from demonstration"],"founding_lab":"TU Munich — Chair of Robotics, Artificial Intelligence and Real-time Systems","notable_people":["Sami Haddadin (Founder)","Roland Zimmermann (CEO)"],"partnerships":["TU Munich","DLR"],"eu_bmbf_grants":["BMBF — Robotic Research Lab 2018"],"open_positions":true,"funding_stage":"Series B","icon":"🤖"},{"id":"neura-robotics","name":"Neura Robotics","city":"Metzingen","state":"Baden-Württemberg","lat":48.539,"lng":9.284,"category":"AI","stage":"Startup","founded":2019,"website":"https://neura-robotics.com","tagline":"Cognitive humanoid robots bridging physical and digital worlds.","tech_keywords":["humanoid robots","cognitive AI","multi-modal sensing","embodied AI"],"research_domains":["humanoid locomotion","scene understanding","HRI"],"founding_lab":null,"notable_people":["David Reger (CEO & Founder)"],"partnerships":["Porsche","Deutsche Telekom"],"eu_bmbf_grants":["EU Horizon Europe — HumanBot 2022"],"open_positions":true,"funding_stage":"Series B","icon":"🧬"},{"id":"german-bionic","name":"German Bionic","city":"Augsburg","state":"Bavaria","lat":48.3555,"lng":10.9005,"category":"Exoskeleton","stage":"Scaleup","founded":2017,"website":"https://germanbionic.com","tagline":"Smart powered exoskeletons augmenting human strength in industrial workplaces.","tech_keywords":["exoskeleton","wearable robotics","IoT","biomechanics"],"research_domains":["human augmentation","ergonomics","wearable sensing"],"founding_lab":null,"notable_people":["Norma Steller (CEO)","Peter Heiligensetzer (Founder)"],"partnerships":["BMW","DB Schenker","Rhenus Logistics"],"eu_bmbf_grants":["BMBF — Exoskeleton Worker Safety 2020"],"open_positions":true,"funding_stage":"Series B","icon":"🦿"},{"id":"ottobock","name":"Ottobock","city":"Duderstadt","state":"Lower Saxony","lat":51.5122,"lng":10.2591,"category":"Medical","stage":"Corporate","founded":1919,"website":"https://ottobock.com","tagline":"Advanced prosthetics, orthotics and human mobility robotics for medical use.","tech_keywords":["prosthetics","orthotics","myoelectric control","neural interfaces"],"research_domains":["neural control of movement","biomechanics","rehabilitation robotics"],"founding_lab":null,"notable_people":["Oliver Schwebel (CEO)"],"partnerships":["Charité Berlin","TU Berlin","MIT Media Lab"],"eu_bmbf_grants":["EU Horizon — SOMA 2019","BMBF — NeuroReha 2021"],"open_positions":true,"funding_stage":"Private Equity","icon":"🏥"},{"id":"magazino","name":"Magazino","city":"Munich","state":"Bavaria","lat":48.1601,"lng":11.582,"category":"Logistics","stage":"Scaleup","founded":2014,"website":"https://magazino.eu","tagline":"Autonomous 3D picking robots for e-commerce and pharmacy warehouse logistics.","tech_keywords":["autonomous mobile robots","3D picking","SLAM","object recognition"],"research_domains":["perception","grasping","autonomous navigation"],"founding_lab":"TU Munich — Institute for Cognitive Systems","notable_people":["Frederik Brantner (CEO)","Nikolas Engelhard (CTO)"],"partnerships":["Zalando","Fiege","TU Munich"],"eu_bmbf_grants":["BMBF — Autonomous Intralogistics 2017"],"open_positions":true,"funding_stage":"Series B","icon":"📦"},{"id":"gestalt-robotics","name":"Gestalt Robotics","city":"Berlin","state":"Berlin","lat":52.525,"lng":13.389,"category":"AI","stage":"Startup","founded":2017,"website":"https://gestalt-robotics.com","tagline":"AI-based robot perception and real-time 3D environment understanding for automation.","tech_keywords":["computer vision","3D perception","deep learning","digital twin"],"research_domains":["scene understanding","sim-to-real transfer","semantic mapping"],"founding_lab":"Fraunhofer IPK Berlin","notable_people":["Michael Sander (CEO)"],"partnerships":["Fraunhofer IPK","Volkswagen","Siemens"],"eu_bmbf_grants":["EU Horizon — DARKO 2021"],"open_positions":false,"funding_stage":"Seed","icon":"👁"},{"id":"wandelbots","name":"Wandelbots","city":"Dresden","state":"Saxony","lat":51.0504,"lng":13.7373,"category":"AI","stage":"Scaleup","founded":2017,"website":"https://wandelbots.com","tagline":"No-code robot teaching via wearable trackers — democratizing automation for SMEs.","tech_keywords":["robot programming","learning from demonstration","no-code","wearable sensors"],"research_domains":["imitation learning","robot programming by demonstration","HRI"],"founding_lab":"TU Dresden — Faculty of Computer Science","notable_people":["Christian Piechnick (CEO & Founder)"],"partnerships":["TU Dresden","SAP","TRUMPF"],"eu_bmbf_grants":["BMBF — KI Innovationswettbewerb 2019","EU Horizon — DIH-HERO 2020"],"open_positions":true,"funding_stage":"Series C","icon":"✍️"},{"id":"fraunhofer-ipa","name":"Fraunhofer IPA","city":"Stuttgart","state":"Baden-Württemberg","lat":48.7458,"lng":9.1629,"category":"Research Lab","stage":"Research Lab","founded":1959,"website":"https://ipa.fraunhofer.de","tagline":"Applied robotics research from healthcare and logistics to industry 4.0 automation.","tech_keywords":["service robots","industrial robotics","robot operating system","AI"],"research_domains":["manipulation","mobile robotics","robot learning","human-robot collaboration"],"founding_lab":null,"notable_people":["Thomas Bauernhansl (Director)"],"partnerships":["Bosch","Daimler","Kuka","University of Stuttgart"],"eu_bmbf_grants":["EU Horizon — DARKO 2021","BMBF — Robotics Innovation Center 2022","EU Horizon — CONCERT 2023"],"open_positions":true,"funding_stage":"Public Institution","icon":"🔬"},{"id":"dlr-robotics","name":"DLR Institute of Robotics","city":"Oberpfaffenhofen","state":"Bavaria","lat":48.086,"lng":11.28,"category":"Research Lab","stage":"Research Lab","founded":1969,"website":"https://dlr.de/rm","tagline":"Germany's aerospace robotics lab — from space manipulators to surgical systems.","tech_keywords":["space robotics","surgical robots","lightweight arms","torque control"],"research_domains":["space robotics","medical robotics","dexterous manipulation","soft robotics"],"founding_lab":null,"notable_people":["Alin Albu-Schäffer (Director)"],"partnerships":["NASA","ESA","TU Munich","Franka Robotics"],"eu_bmbf_grants":["EU Horizon — ENRICH 2020","BMBF — AI Space Robotics 2022"],"open_positions":true,"funding_stage":"Federal Research Institution","icon":"🛰"},{"id":"robotise","name":"Robotise","city":"Munich","state":"Bavaria","lat":48.1351,"lng":11.595,"category":"Industrial","stage":"Startup","founded":2018,"website":"https://robotise.eu","tagline":"Autonomous JEEVES service robots for hotels and commercial building operations.","tech_keywords":["service robots","autonomous navigation","human-robot interaction","hospitality"],"research_domains":["mobile manipulation","HRI","socially-aware navigation"],"founding_lab":null,"notable_people":["Andreas Kuhn (CEO)"],"partnerships":["Hilton","Siemens Real Estate"],"eu_bmbf_grants":[],"open_positions":false,"funding_stage":"Seed","icon":"🏨"},{"id":"doks-innovation","name":"doks. innovation","city":"Munich","state":"Bavaria","lat":48.1251,"lng":11.562,"category":"Logistics","stage":"Startup","founded":2018,"website":"https://doks.ai","tagline":"Autonomous drone systems for smart warehouses and fully automated inventory scanning.","tech_keywords":["drones","warehouse automation","computer vision","inventory management"],"research_domains":["aerial robotics","SLAM","autonomous inspection"],"founding_lab":"TU Munich — Chair of Automatic Control Engineering","notable_people":["Benedikt Sauter (CEO)"],"partnerships":["DB Schenker","Fiege","TU Munich"],"eu_bmbf_grants":["BMBF — Autonomous Aerial Intralogistics 2020"],"open_positions":true,"funding_stage":"Series A","icon":"🚁"},{"id":"ipr-kit","name":"KIT — Institute for Robotics (IPR)","city":"Karlsruhe","state":"Baden-Württemberg","lat":49.013,"lng":8.4093,"category":"Research Lab","stage":"Research Lab","founded":1972,"website":"https://ipr.kit.edu","tagline":"Research in grasping, dexterous hands, and mobile manipulation at KIT.","tech_keywords":["dexterous grasping","soft hands","robot learning","mobile manipulation"],"research_domains":["grasping","soft robotics","robot learning","human-robot collaboration"],"founding_lab":null,"notable_people":["Tamim Asfour (Director)"],"partnerships":["Fraunhofer IPA","BMW","SAP"],"eu_bmbf_grants":["EU Horizon — VERobotics 2020","BMBF — ArtiHand 2021"],"open_positions":true,"funding_stage":"Public University","icon":"🦾"},{"id":"brainlab","name":"Brainlab Robotics","city":"Munich","state":"Bavaria","lat":48.105,"lng":11.635,"category":"Medical","stage":"Corporate","founded":1989,"website":"https://brainlab.com","tagline":"Surgical robotic navigation, AR-guided neurosurgery and digital surgery systems.","tech_keywords":["surgical navigation","AR surgery","robotic positioning","image-guided therapy"],"research_domains":["medical robotics","surgical navigation","computer-assisted surgery"],"founding_lab":"TU Munich","notable_people":["Stefan Vilsmeier (CEO & Founder)"],"partnerships":["Siemens Healthineers","Philips","Stryker"],"eu_bmbf_grants":["EU Horizon — OR.NET 2021"],"open_positions":true,"funding_stage":"Private","icon":"🧠"},{"id":"roboception","name":"Roboception","city":"Munich","state":"Bavaria","lat":48.1651,"lng":11.542,"category":"AI","stage":"Spinout","founded":2014,"website":"https://roboception.de","tagline":"Stereo vision and 3D perception sensors enabling robots to see and understand scenes.","tech_keywords":["stereo vision","3D perception","depth sensing","robot vision"],"research_domains":["3D reconstruction","robot perception","bin picking"],"founding_lab":"TU Munich — Chair of Computer Vision & Artificial Intelligence","notable_people":["Heiko Hirschmüller (Founder & CTO)"],"partnerships":["TU Munich","DLR","FANUC"],"eu_bmbf_grants":["BMBF — 3D Vision for Robotics 2016"],"open_positions":true,"funding_stage":"Acquired (Roboception GmbH)","icon":"🎯"},{"id":"dfki-robotics","name":"DFKI Robotics Innovation Center","city":"Bremen","state":"Bremen","lat":53.0893,"lng":8.8177,"category":"Research Lab","stage":"Research Lab","founded":2006,"website":"https://robotik.dfki-bremen.de","tagline":"AI and robotics research focusing on space, underwater and disaster-response robots.","tech_keywords":["space robotics","underwater robots","legged locomotion","AI planning"],"research_domains":["field robotics","space robotics","legged locomotion","autonomous systems"],"founding_lab":null,"notable_people":["Frank Kirchner (Director)"],"partnerships":["ESA","NASA","Airbus Defence","University of Bremen"],"eu_bmbf_grants":["EU Horizon — ESROCOS 2019","BMBF — Capio 2021","EU Horizon — ERGO 2023"],"open_positions":true,"funding_stage":"Public Research Institution","icon":"🌊"},{"id":"continental-robotics","name":"Continental — Autonomous Mobility","city":"Hanover","state":"Lower Saxony","lat":52.3759,"lng":9.738,"category":"Industrial","stage":"Corporate","founded":1871,"website":"https://continental.com","tagline":"Automotive robotics, ADAS systems, and smart factory automation at scale.","tech_keywords":["autonomous vehicles","ADAS","radar sensing","lidar","smart factory"],"research_domains":["autonomous navigation","sensor fusion","edge AI","vehicle robotics"],"founding_lab":null,"notable_people":["Nikolai Setzer (CEO)"],"partnerships":["BMW","Daimler","NVIDIA","TU Braunschweig"],"eu_bmbf_grants":["EU Horizon — AutoDrive 2019","BMBF — KI Delta Learning 2020"],"open_positions":true,"funding_stage":"Public (DAX)","icon":"🏭"},{"id":"reactive-robotics","name":"Reactive Robotics","city":"Munich","state":"Bavaria","lat":48.1751,"lng":11.528,"category":"Medical","stage":"Spinout","founded":2016,"website":"https://reactive-robotics.com","tagline":"ICU rehabilitation robots enabling early patient mobilization in intensive care.","tech_keywords":["rehabilitation robotics","ICU mobilization","patient handling","clinical robotics"],"research_domains":["rehabilitation robotics","medical devices","human-robot interaction"],"founding_lab":"TU Munich — Institute for Cognitive Systems","notable_people":["Philipp Janku (CEO & Founder)"],"partnerships":["LMU Klinikum München","TU Munich","Charité Berlin"],"eu_bmbf_grants":["BMBF — RehaRobot Klinik 2018","EU Horizon — EUROBENCH 2019"],"open_positions":true,"funding_stage":"Series A","icon":"💊"},{"id":"apera-ai","name":"Apera AI Germany","city":"Stuttgart","state":"Baden-Württemberg","lat":48.7858,"lng":9.1929,"category":"AI","stage":"Scaleup","founded":2017,"website":"https://apera.ai","tagline":"Vision AI for adaptive robotic grasping in high-mix manufacturing environments.","tech_keywords":["vision AI","adaptive grasping","high-mix manufacturing","bin picking"],"research_domains":["robot perception","grasp planning","sim-to-real","deep learning"],"founding_lab":null,"notable_people":["Carlo Landmesser (DE Lead)"],"partnerships":["Bosch","Festo","Fraunhofer IPA"],"eu_bmbf_grants":[],"open_positions":true,"funding_stage":"Series A","icon":"🔭"},{"id":"fraunhofer-iis","name":"Fraunhofer IIS — Robotics Group","city":"Erlangen","state":"Bavaria","lat":49.5897,"lng":11.0078,"category":"Research Lab","stage":"Research Lab","founded":1985,"website":"https://iis.fraunhofer.de","tagline":"Sensor systems, wireless robotics comms and embedded AI for smart robots.","tech_keywords":["sensor systems","embedded AI","wireless comms","positioning systems"],"research_domains":["robot sensing","embedded systems","indoor localization","edge AI"],"founding_lab":null,"notable_people":["Albert Heuberger (Director)"],"partnerships":["Siemens","Bosch","FAU Erlangen-Nürnberg"],"eu_bmbf_grants":["BMBF — SmartSensor Robotik 2020","EU Horizon — TERMINET 2021"],"open_positions":true,"funding_stage":"Public Institution","icon":"📡"},{"id":"limes-robotics","name":"Limes Robotics","city":"Berlin","state":"Berlin","lat":52.51,"lng":13.45,"category":"AI","stage":"Startup","founded":2022,"website":"https://limesrobotics.de","tagline":"Modular AI manipulation enabling rapid robot task adaptation without reprogramming.","tech_keywords":["modular robotics","task learning","LLM robot control","adaptive manipulation"],"research_domains":["robot learning","task and motion planning","foundation models for robotics"],"founding_lab":"TU Berlin — Robotics and Biology Lab","notable_people":["Oliver Brock (Scientific Advisor)"],"partnerships":["TU Berlin","Amazon Science"],"eu_bmbf_grants":["BMBF — KI-Starter 2023"],"open_positions":true,"funding_stage":"Pre-seed","icon":"⚡"},{"id":"tu-berlin-rbo","name":"TU Berlin — Robotics & Biology Lab","city":"Berlin","state":"Berlin","lat":52.512,"lng":13.327,"category":"Research Lab","stage":"Research Lab","founded":2005,"website":"https://www.robotics.tu-berlin.de","tagline":"Pioneering soft robotics, compliant manipulation and embodied intelligence research.","tech_keywords":["soft robotics","compliant mechanisms","embodied AI","dexterous hands"],"research_domains":["soft robotics","manipulation","embodied cognition","robot learning"],"founding_lab":null,"notable_people":["Oliver Brock (Director)"],"partnerships":["Amazon Science","Google DeepMind","Fraunhofer IPK"],"eu_bmbf_grants":["EU Horizon — SoftPro 2019","BMBF — Soft Manipulation 2022"],"open_positions":true,"funding_stage":"Public University","icon":"🐙"},{"id":"enway","name":"Enway","city":"Berlin","state":"Berlin","lat":52.53,"lng":13.38,"category":"Logistics","stage":"Startup","founded":2019,"website":"https://enway.ai","tagline":"Autonomous outdoor cleaning and sweeping robots for cities and industrial sites.","tech_keywords":["outdoor AMR","autonomous sweeping","urban robotics","LiDAR navigation"],"research_domains":["outdoor navigation","SLAM","path planning","autonomous vehicles"],"founding_lab":"TU Berlin","notable_people":["Eckart Beutler (CEO)"],"partnerships":["Hako","TU Berlin","Berlin Senate"],"eu_bmbf_grants":["BMBF — Autonome Reinigungsroboter 2021"],"open_positions":true,"funding_stage":"Series A","icon":"🧹"},{"id":"percepto-germany","name":"Percepto Germany","city":"Frankfurt","state":"Hesse","lat":50.1109,"lng":8.6821,"category":"Industrial","stage":"Scaleup","founded":2021,"website":"https://percepto.co","tagline":"Autonomous drone-in-a-box for industrial inspection of infrastructure and energy assets.","tech_keywords":["inspection drones","autonomous flight","computer vision","infrastructure monitoring"],"research_domains":["aerial robotics","autonomous inspection","anomaly detection"],"founding_lab":null,"notable_people":["Sagi Blumberg (DE Director)"],"partnerships":["E.ON","Deutsche Bahn","BASF"],"eu_bmbf_grants":[],"open_positions":true,"funding_stage":"Series B","icon":"🔍"}];
+
+// ─── STATS ────────────────────────────────────────────────────────────────
+function updateStats(visible) {
+  document.getElementById('stat-total').textContent = visible.length;
+  document.getElementById('stat-hiring').textContent = visible.filter(c=>c.open_positions).length;
+  document.getElementById('stat-grants').textContent = visible.filter(c=>c.eu_bmbf_grants.length>0).length;
+}
+
+// ─── MARKER ICON ─────────────────────────────────────────────────────────
+function mkIcon(c) {
+  const col = CAT_COLOR[c.category] || '#fff';
+  return L.divIcon({
+    className: '',
+    iconSize: [32,32],
+    iconAnchor: [16,16],
+    html: `<div style="
+      width:32px;height:32px;border-radius:50%;
+      border:2px solid ${col};background:#0a0e14;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;box-shadow:0 0 12px ${col}44;
+    ">${c.icon}</div>`
+  });
+}
+
+// ─── POPUP ────────────────────────────────────────────────────────────────
+function mkPopup(c) {
+  const col = CAT_COLOR[c.category] || '#fff';
+  return `<div class="pu">
+    <div class="pu-head">
+      <div class="pu-cat" style="color:${col}">${c.category.toUpperCase()} · ${c.stage.toUpperCase()}</div>
+      <div class="pu-name">${c.name}</div>
+    </div>
+    <div class="pu-body">
+      <div class="pu-row"><span>CITY</span><span>${c.city}, ${c.state}</span></div>
+      <div class="pu-row"><span>FOUNDED</span><span>${c.founded}</span></div>
+      <div class="pu-row"><span>HIRING</span><span style="color:${c.open_positions?'#00c9a0':'#4a5f78'}">${c.open_positions?'YES ✓':'NO'}</span></div>
+      <div class="pu-hint">↓ CLICK LIST ITEM FOR FULL DETAILS</div>
+    </div>
+  </div>`;
+}
+
+// ─── DETAIL PANEL ─────────────────────────────────────────────────────────
+function openDetail(c) {
+  document.getElementById('d-name').textContent = c.name;
+  document.getElementById('d-city').textContent = `📍 ${c.city}, ${c.state}`;
+  document.getElementById('d-tagline').textContent = c.tagline;
+  document.getElementById('d-founded').textContent = c.founded;
+  document.getElementById('d-stage').textContent = c.stage;
+  document.getElementById('d-funding').textContent = c.funding_stage;
+  document.getElementById('d-web').innerHTML = `<a href="${c.website}" target="_blank">${c.website.replace('https://','')}</a>`;
+  document.getElementById('d-hiring').innerHTML = c.open_positions
+    ? '<span style="color:#00c9a0">YES — Actively Hiring</span>'
+    : '<span style="color:#4a5f78">No open positions</span>';
+  document.getElementById('d-lab').textContent = c.founding_lab || '—';
+
+  const kwEl = document.getElementById('d-keywords');
+  kwEl.innerHTML = c.tech_keywords.map(k=>`<span class="kw">${k}</span>`).join('');
+
+  const gEl = document.getElementById('d-grants');
+  gEl.innerHTML = c.eu_bmbf_grants.length
+    ? c.eu_bmbf_grants.map(g=>`<div class="grant-item">🏛 ${g}</div>`).join('')
+    : '<div style="font-size:9px;color:#4a5f78">No recorded grants</div>';
+
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+document.getElementById('detail-close').addEventListener('click', () => {
+  document.getElementById('detail-panel').classList.remove('open');
+});
+
+// ─── FILTER & RENDER ─────────────────────────────────────────────────────
+function matches(c) {
+  if (activeCat !== 'all' && c.category !== activeCat) return false;
+  if (activeStage !== 'all' && c.stage !== activeStage) return false;
+  if (hiringOnly && !c.open_positions) return false;
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    const blob = [c.name, c.city, c.state, c.category, c.stage, ...c.tech_keywords, ...(c.research_domains||[])].join(' ').toLowerCase();
+    if (!blob.includes(q)) return false;
+  }
+  return true;
+}
+
+function render() {
+  cluster.clearLayers();
+  markerMap = {};
+  const list = document.getElementById('company-list');
+  list.innerHTML = '';
+
+  const visible = DATA.filter(matches);
+  updateStats(visible);
+
+  visible.forEach((c, vi) => {
+    const i = DATA.indexOf(c);
+    const m = L.marker([c.lat, c.lng], { icon: mkIcon(c) });
+    m.bindPopup(mkPopup(c), { maxWidth: 260 });
+    m.on('click', () => {
+      selectItem(i);
+      openDetail(c);
+    });
+    cluster.addLayer(m);
+    markerMap[i] = m;
+
+    const el = document.createElement('div');
+    el.className = 'citem';
+    el.id = `ci-${i}`;
+    el.innerHTML = `
+      <div class="citem-top">
+        <div class="citem-name">${c.name}</div>
+        ${c.open_positions ? '<span class="citem-hiring">HIRING</span>' : ''}
+      </div>
+      <div class="citem-city">📍 ${c.city}</div>
+      <div class="citem-badges">
+        <span class="badge" style="background:${CAT_COLOR[c.category]}22;color:${CAT_COLOR[c.category]}">${c.category}</span>
+        <span class="badge" style="background:#1e2730;color:#4a5f78">${c.stage}</span>
+        ${c.eu_bmbf_grants.length ? '<span class="badge" style="background:rgba(0,201,160,.1);color:#00c9a0">FUNDED</span>' : ''}
+      </div>
+    `;
+    el.addEventListener('click', () => {
+      selectItem(i);
+      openDetail(c);
+      map.setView([c.lat, c.lng], Math.max(map.getZoom(), 9), { animate:true });
+      cluster.zoomToShowLayer(markerMap[i], () => markerMap[i].openPopup());
+    });
+    list.appendChild(el);
+  });
+
+  if (!visible.length) {
+    list.innerHTML = '<div class="no-res">NO RESULTS<br><span style="font-size:9px">Adjust filters or search</span></div>';
+  }
+}
+
+function selectItem(i) {
+  if (selectedIdx !== null) {
+    const prev = document.getElementById(`ci-${selectedIdx}`);
+    if (prev) prev.classList.remove('sel');
+  }
+  selectedIdx = i;
+  const el = document.getElementById(`ci-${i}`);
+  if (el) { el.classList.add('sel'); el.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
+}
+
+// ─── FILTER BUTTONS ───────────────────────────────────────────────────────
+document.querySelectorAll('.fbtn[data-g="cat"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fbtn[data-g="cat"]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat = btn.dataset.v;
+    render();
+  });
+});
+
+document.querySelectorAll('.fbtn[data-g="stage"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fbtn[data-g="stage"]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeStage = btn.dataset.v;
+    render();
+  });
+});
+
+const hiringToggle = document.getElementById('hiring-toggle');
+hiringToggle.addEventListener('click', () => {
+  hiringOnly = !hiringOnly;
+  hiringToggle.classList.toggle('on', hiringOnly);
+  render();
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  searchQ = e.target.value.trim();
+  render();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
